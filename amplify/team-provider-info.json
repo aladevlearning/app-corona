@@ -1,0 +1,20 @@
+{
+  "dev": {
+    "awscloudformation": {
+      "AuthRoleName": "amplify-appcorona-dev-140107-authRole",
+      "UnauthRoleArn": "arn:aws:iam::555485882223:role/amplify-appcorona-dev-140107-unauthRole",
+      "AuthRoleArn": "arn:aws:iam::555485882223:role/amplify-appcorona-dev-140107-authRole",
+      "Region": "eu-west-1",
+      "DeploymentBucketName": "amplify-appcorona-dev-140107-deployment",
+      "UnauthRoleName": "amplify-appcorona-dev-140107-unauthRole",
+      "StackName": "amplify-appcorona-dev-140107",
+      "StackId": "arn:aws:cloudformation:eu-west-1:555485882223:stack/amplify-appcorona-dev-140107/c4cdbbd0-4481-11ec-9a2c-0625d97e5e1b",
+      "AmplifyAppId": "d3mpcof2njn4lr"
+    },
+    "categories": {
+      "auth": {
+        "appcorona6fe30e1e": {}
+      }
+    }
+  }
+}
