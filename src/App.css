@@ -43,16 +43,28 @@ body,
   /* The ancestors of the map element */
   height: 100%;
 }
+
 .search-section {
   z-index: 1;
   position: absolute;
-  top: 0;
+  top: 9px;
 }
 
+#info {
+  position: absolute;
+  top: 100px;
+}
 #map {
   /* The id of the container you passed to createMap */
   position: absolute;
   top: 0;
   bottom: 0;
   width: 100%;
+}
+
+.mapboxgl-popup {
+  max-width: 300px !important;
+}
+.maplibregl-popup-content .mapboxgl-popup-content {
+  width: 300px !important;
 }

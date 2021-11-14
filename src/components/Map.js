@@ -1,13 +1,18 @@
+
 import maplibregl from 'maplibre-gl';
-import { createMap, drawPoints, createAmplifyGeocoder } from "maplibre-gl-js-amplify";
+import { createMap, drawPoints } from "maplibre-gl-js-amplify";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { useEffect, useRef, useState } from "react";
-import { Geo } from "aws-amplify"
+import { isMobile } from 'react-device-detect';
+import SearchField from "./SearchField/SearchField";
+import Spinner from './Spinner';
+
 
 const Map = () => {
   const mapRef = useRef(null); // Reference to the map DOM element
   let [map, setMap] = useState(null);
-
+  let [loading, setLoading] = useState(true);
+  let [showSearch, setShowSearch] = useState(false);
 
   // Wrapping our code in a useEffect allows us to run initializeMap after the div has been rendered into the DOM
   useEffect(() => {
@@ -18,13 +23,10 @@ const Map = () => {
         map = await createMap({
           container: mapRef.current,
           center: [10.11565295, 56.71684027],
-          zoom: 6
+          zoom: isMobile ? 5 : 6
         });
         setMap(map);
-        //  const geocoder = createAmplifyGeocoder();
-        // document.getElementById("search").appendChild(geocoder.onAdd());
 
-        //  map.addControl(geocoder);
         map.addControl(new maplibregl.NavigationControl());
         map.addControl(
           new maplibregl.GeolocateControl({
@@ -35,16 +37,11 @@ const Map = () => {
           })
         );
         const response = await getTestCenterList();
+        setLoading(false);
         const { centres } = response;
         addLocations(
           map,
-          centres.map(centre => {
-            return {
-              coordinates: [centre.longitude, centre.latitude],
-              title: centre.testcenterName,
-              address: centre.address,
-            }
-          })
+          centres
         )
       }
     }
@@ -56,34 +53,129 @@ const Map = () => {
     };
   }, []);
 
-  function addLocations(map, centers) {
+  function addLocations(map, centres) {
+
+    /*
+    const coordinates = centres.map(centre => {
+      return {
+        coordinates: [centre.longitude, centre.latitude],
+        title: centre.testcenterName,
+        address: centre.address,
+      }
+    })
+    */
+
+    const coordinates = centres.map(centre => {
+      return {
+        type: "Feature",
+        geometry: {
+          type: "Point",
+          coordinates: [centre.longitude, centre.latitude]
+        },
+        id: centre.longitude + "-" + centre.latitude + "-" + centre.type,
+        properties: centre
+      }
+    })
+
+    const infoMap = {};
+    centres.forEach(centre => {
+      infoMap[centre.longitude + "-" + centre.latitude + "-" + centre.type] = centre;
+    })
+    console.log(infoMap);
+    console.log(centres.length);
+    console.log(Object.keys(infoMap));
+
     map.on("load", () => {
+      setShowSearch(true);
       drawPoints("mySourceName", // Arbitrary source name
-        centers, // An array of coordinate data, an array of Feature data, or an array of [NamedLocations](https://github.com/aws-amplify/maplibre-gl-js-amplify/blob/main/src/types.ts#L8)
+        coordinates, // An array of coordinate data, an array of Feature data, or an array of [NamedLocations](https://github.com/aws-amplify/maplibre-gl-js-amplify/blob/main/src/types.ts#L8)
         map,
         {
           showCluster: true,
           unclusteredOptions: {
             showMarkerPopup: true,
+            popupRender: (selectedFeature) => {
+              console.log(selectedFeature)
+              const { properties } = selectedFeature;
+
+              const timeTable = `
+                      <table style="width:240px">
+                        ${JSON.parse(properties.openingHours)
+                  .map(time => {
+                    return (
+                      `<tr style="text-align:start">
+                                    <td style="width:100px">
+                                      <span className="day"><strong>${time.day}</strong></span>
+                                    </td>
+                                    <td>  
+                                      <span className="start">${time.timeStart}</span> -
+                                      <span className="start">${time.timeEnd}</span>
+                                    </td>
+                                <tr>`
+                    )
+                  }
+                  )
+                }
+                      </table>
+              `
+
+              return `
+                <div>
+                  <table>
+                    <tr style="text-align:start">
+                      <td style="width:100px"><strong>Type:<strong></td>
+                      <td>${properties.type}</td>
+                    </tr>
+                    <tr style="text-align:start">
+                      <td style="width:100px"><strong>Address</strong></td>
+                      <td>${properties.address} </td>
+                    </tr>
+                    <tr style="text-align:start">
+                      <td style="width:100px"><strong>Min age<strong></td>
+                      <td>2</td>
+                    </tr>
+                </table>
+                  
+                ${timeTable}
+
+                <table>
+                    <tr style="text-align:start">
+                      <td style="width:100px"><strong>Handicap parking<strong></td>
+                      <td>no</td>
+                    </tr>                  
+                    <tr style="text-align:start">
+                      <td style="width:100px"><strong>Test foreigners<strong></td>
+                      <td>yes</td>
+                    </tr>
+                    <tr style="text-align:start">
+                      <td style="width:100px">
+                        <a href="${properties.bookingLink}" target="_blank" title="Book time at ${properties.city}">Book time</a>
+                      </td>
+                      <td>
+                       <a href="${properties.directionsLink}" target="_blank" title="Find vej til ${properties.city}">GoogleMap</a>
+                      </td>
+                    </tr>
+                   
+                </table>
+              </div>
+        </div>
+              `
+            }
           },
           clusterOptions: {
+            fillColor: "#36D7B7",
             showCount: true,
-            /*  smCircleSize: 20,
-              mdCircleSize: 20,
-              clusterMaxZoom: 10,
-              smThreshold: 1,
-              mdThreshold: 14,
-              lgThreshold: 16,
-              lgCircleSize: 30,
-              xlCircleSize: 50*/
             smThreshold: 10,
-            smCircleSize: 30,
+            smCircleSize: isMobile ? 15 : 30,
             mdThreshold: 30,
-            mdCircleSize: 50,
+            mdCircleSize: isMobile ? 25 : 50,
             lgThreshold: 40,
-            lgCircleSize: 80,
+            lgCircleSize: isMobile ? 40 : 80,
             xlThreshold: 50,
-            xlCircleSize: 150,
+            xlCircleSize: isMobile ? 75 : 80,
+            onClick: (e, a, b, c) => {
+              console.log('clicl', e, a, b, c)
+            }
           },
         }
       );
@@ -95,17 +187,17 @@ const Map = () => {
       .then(data => data.json())
   }
 
-  async function onSearch(event) {
-    const response = await Geo.searchByText(event.target.value);
-    console.log(response)
-  }
-
   return <>
-    <section className="search-section">
-      <input type="search" onBlur={(event) => onSearch(event)} />
-    </section>
 
-    <div ref={mapRef} id="map" />;
+    <Spinner loading={loading} />
+
+    {showSearch &&
+      <>
+        <section className="search-section">
+          <SearchField map={map} />
+        </section>
+      </>}
+    <div ref={mapRef} id="map" />
   </>
 }
 

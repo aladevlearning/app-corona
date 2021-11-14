@@ -1,8 +1,7 @@
-import './App.css';
-import { useState} from "react";
-import Map from './components/Map'
 import Amplify from 'aws-amplify';
+import './App.css';
 import awsconfig from './aws-exports';
+import Map from './components/Map';
 Amplify.configure(awsconfig);
 
 function App() {
@@ -10,10 +9,7 @@ function App() {
 
   return (
     <div className="App">
-      <header className="App-header">
-        Map
-      </header>
-      <Map/>
+      <Map />
     </div>
   );
 }
