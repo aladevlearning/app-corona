@@ -1,7 +1,7 @@
 import Amplify from 'aws-amplify';
 import './App.css';
 import awsconfig from './aws-exports';
-import Map from './components/Map';
+import CoronaCentresMap from './components/CoronaCentresMap';
 Amplify.configure(awsconfig);
 
 function App() {
@@ -9,7 +9,7 @@ function App() {
 
   return (
     <div className="App">
-      <Map />
+      <CoronaCentresMap />
     </div>
   );
 }

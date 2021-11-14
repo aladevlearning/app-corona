@@ -63,8 +63,5 @@ body,
 }
 
 .mapboxgl-popup {
-  max-width: 300px !important;
-}
-.maplibregl-popup-content .mapboxgl-popup-content {
-  width: 300px !important;
+  max-width: 19rem !important;
 }

@@ -21,7 +21,7 @@ const SearchField = (props) => {
 
         const searchOptionsWithSearchAreaConstraints = {
             countries: ["DNK"],
-            maxResults: 5,
+            maxResults: 10,
             searchAreaConstraints: [7.94, 54.55, 15.60, 57.86],
         }
 
@@ -38,7 +38,7 @@ const SearchField = (props) => {
     const getSuggestionValue = suggestion => {
         props.map.flyTo({
             center: suggestion.point,
-            zoom: 10,
+            zoom: 12,
             speed: 1.5,
             curve: 1,
             easing(t) {

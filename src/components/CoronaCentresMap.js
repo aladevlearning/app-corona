@@ -1,14 +1,15 @@
-
+import { decode } from 'html-entities';
 import maplibregl from 'maplibre-gl';
 import { createMap, drawPoints } from "maplibre-gl-js-amplify";
 import "maplibre-gl/dist/maplibre-gl.css";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from 'react';
 import { isMobile } from 'react-device-detect';
+import { renderToString } from 'react-dom/server';
+import InfoPopup from './InfoPopup/InfoPopup';
 import SearchField from "./SearchField/SearchField";
 import Spinner from './Spinner';
 
-
-const Map = () => {
+const CoronaCentresMap = () => {
   const mapRef = useRef(null); // Reference to the map DOM element
   let [map, setMap] = useState(null);
   let [loading, setLoading] = useState(true);
@@ -55,16 +56,6 @@ const Map = () => {
 
   function addLocations(map, centres) {
 
-    /*
-    const coordinates = centres.map(centre => {
-      return {
-        coordinates: [centre.longitude, centre.latitude],
-        title: centre.testcenterName,
-        address: centre.address,
-      }
-    })
-    */
-
     const coordinates = centres.map(centre => {
       return {
         type: "Feature",
@@ -77,13 +68,6 @@ const Map = () => {
       }
     })
 
-    const infoMap = {};
-    centres.forEach(centre => {
-      infoMap[centre.longitude + "-" + centre.latitude + "-" + centre.type] = centre;
-    })
-    console.log(infoMap);
-    console.log(centres.length);
-    console.log(Object.keys(infoMap));
 
     map.on("load", () => {
       setShowSearch(true);
@@ -95,71 +79,7 @@ const Map = () => {
           unclusteredOptions: {
             showMarkerPopup: true,
             popupRender: (selectedFeature) => {
-              console.log(selectedFeature)
-              const { properties } = selectedFeature;
-
-              const timeTable = `
-                      <table style="width:240px">
-                        ${JSON.parse(properties.openingHours)
-                  .map(time => {
-                    return (
-                      `<tr style="text-align:start">
-                                    <td style="width:100px">
-                                      <span className="day"><strong>${time.day}</strong></span>
-                                    </td>
-                                    <td>  
-                                      <span className="start">${time.timeStart}</span> -
-                                      <span className="start">${time.timeEnd}</span>
-                                    </td>
-                                <tr>`
-                    )
-                  }
-                  )
-                }
-                      </table>
-              `
-
-              return `
-                <div>
-                  <table>
-                    <tr style="text-align:start">
-                      <td style="width:100px"><strong>Type:<strong></td>
-                      <td>${properties.type}</td>
-                    </tr>
-                    <tr style="text-align:start">
-                      <td style="width:100px"><strong>Address</strong></td>
-                      <td>${properties.address} </td>
-                    </tr>
-                    <tr style="text-align:start">
-                      <td style="width:100px"><strong>Min age<strong></td>
-                      <td>2</td>
-                    </tr>
-                </table>
-                  
-                ${timeTable}
-
-                <table>
-                    <tr style="text-align:start">
-                      <td style="width:100px"><strong>Handicap parking<strong></td>
-                      <td>no</td>
-                    </tr>                  
-                    <tr style="text-align:start">
-                      <td style="width:100px"><strong>Test foreigners<strong></td>
-                      <td>yes</td>
-                    </tr>
-                    <tr style="text-align:start">
-                      <td style="width:100px">
-                        <a href="${properties.bookingLink}" target="_blank" title="Book time at ${properties.city}">Book time</a>
-                      </td>
-                      <td>
-                       <a href="${properties.directionsLink}" target="_blank" title="Find vej til ${properties.city}">GoogleMap</a>
-                      </td>
-                    </tr>
-                   
-                </table>
-              </div>
-        </div>
-              `
+              return decode(renderToString(<InfoPopup selectedFeature={selectedFeature} centres={centres} />));
             }
           },
           clusterOptions: {
@@ -202,4 +122,4 @@ const Map = () => {
 }
 
 
-export default Map;
+export default CoronaCentresMap;

@@ -8,6 +8,7 @@
     "@testing-library/react": "^11.1.0",
     "@testing-library/user-event": "^12.1.10",
     "aws-amplify": "^4.3.6",
+    "html-entities": "^2.3.2",
     "lodash": "^4.17.21",
     "maplibre-gl": "^1.15.2",
     "maplibre-gl-js-amplify": "^1.1.2",
