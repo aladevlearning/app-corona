@@ -5,9 +5,9 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import { useEffect, useRef, useState } from 'react';
 import { isMobile } from 'react-device-detect';
 import { renderToString } from 'react-dom/server';
-import InfoPopup from './InfoPopup/InfoPopup';
-import SearchField from "./SearchField/SearchField";
-import Spinner from './Spinner';
+import InfoPopup from '../InfoPopup/InfoPopup';
+import SearchField from "../SearchField/SearchField";
+import Spinner from '../Spinner/Spinner';
 
 const CoronaCentresMap = () => {
   const mapRef = useRef(null); // Reference to the map DOM element
@@ -24,7 +24,9 @@ const CoronaCentresMap = () => {
         map = await createMap({
           container: mapRef.current,
           center: [10.11565295, 56.71684027],
-          zoom: isMobile ? 5 : 6
+          zoom: isMobile ? 5 : 6,
+          minZoom: isMobile ? 5 : 6,
+          minPitch: 5
         });
         setMap(map);
 
@@ -37,12 +39,26 @@ const CoronaCentresMap = () => {
             trackUserLocation: true
           })
         );
-        const response = await getTestCenterList();
+        let covidKortCentresResponse;
+        try {
+          covidKortCentresResponse = await getTestCenterList();
+        } catch (e) {
+          covidKortCentresResponse = { centres: [] }
+        }
+
+        let cphMedCentresResponse;
+        try {
+          cphMedCentresResponse = await getAdditionalInfo();
+        } catch (e) {
+          cphMedCentresResponse = { result: [] }
+        }
+
+
         setLoading(false);
-        const { centres } = response;
         addLocations(
           map,
-          centres
+          covidKortCentresResponse,
+          cphMedCentresResponse
         )
       }
     }
@@ -54,16 +70,31 @@ const CoronaCentresMap = () => {
     };
   }, []);
 
-  function addLocations(map, centres) {
+  function addLocations(map, covidKortCentresResponse, cphMedCentresResponse) {
+
+    const { centres } = covidKortCentresResponse;
+    const { locations } = cphMedCentresResponse.results;
+
+    const cphMedLocationMap = buildCphMedMap(locations)
 
     const coordinates = centres.map(centre => {
+      const { longitude, latitude, type } = centre;
+
+      const key = `${longitude.toString().substring(0, 8)}-${latitude.toString().substring(0, 8)}`;
+
+      if (cphMedLocationMap.has(key)) {
+        centre.waitingTime = cphMedLocationMap.get(key).description
+          .replace('Estimeret kø: ', '')
+          .substring(0, 20);;
+      }
+
       return {
         type: "Feature",
         geometry: {
           type: "Point",
-          coordinates: [centre.longitude, centre.latitude]
+          coordinates: [longitude, latitude]
         },
-        id: centre.longitude + "-" + centre.latitude + "-" + centre.type,
+        id: `${key}-${type}`,
         properties: centre
       }
     })
@@ -86,17 +117,15 @@ const CoronaCentresMap = () => {
             fillColor: "#36D7B7",
             showCount: true,
             smThreshold: 10,
-            smCircleSize: isMobile ? 15 : 30,
+            borderWidth: 1,
+            smCircleSize: isMobile ? 10 : 20,
             mdThreshold: 30,
-            mdCircleSize: isMobile ? 25 : 50,
+            mdCircleSize: isMobile ? 20 : 50,
             lgThreshold: 40,
-            lgCircleSize: isMobile ? 40 : 80,
+            lgCircleSize: isMobile ? 30 : 80,
             xlThreshold: 50,
-            xlCircleSize: isMobile ? 75 : 80,
-            onClick: (e, a, b, c) => {
-              console.log('clicl', e, a, b, c)
-            }
-          },
+            xlCircleSize: isMobile ? 75 : 80
+          }
         }
       );
     });
@@ -107,6 +136,30 @@ const CoronaCentresMap = () => {
       .then(data => data.json())
   }
 
+  function getAdditionalInfo() {
+    return fetch('https://api.storepoint.co/v1/1614b4269b6d23/locations')
+      .then(data => data.json())
+  }
+
+  function buildCphMedMap(locations) {
+    let cphMedLocationMap = new Map();
+    locations.forEach(location => {
+      const { loc_long, loc_lat } = location;
+
+      let normalizedLongitude = loc_long.toString();
+      if (normalizedLongitude.length > 8) {
+        normalizedLongitude = normalizedLongitude.substring(0, 8)
+      }
+
+      let normalizedLatitude = loc_lat.toString();
+      if (normalizedLatitude.length > 8) {
+        normalizedLatitude = normalizedLatitude.substring(0, 8)
+      }
+      cphMedLocationMap.set(`${normalizedLongitude}-${normalizedLatitude}`, location);
+    });
+
+    return cphMedLocationMap;
+  }
   return <>
 
     <Spinner loading={loading} />

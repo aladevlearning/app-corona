@@ -1,6 +1,7 @@
 import { Geo } from 'aws-amplify';
 import { useState } from 'react';
 import Autosuggest from 'react-autosuggest';
+import { DebounceInput } from 'react-debounce-input';
 import { isMobile } from 'react-device-detect';
 import './SearchField.css';
 
@@ -8,6 +9,7 @@ const SearchField = (props) => {
 
     let [suggestions, setSuggestions] = useState([]);
     let [searchTerm, setSearchTerm] = useState("");
+
 
     const renderSuggestion = suggestion => {
         return (
@@ -35,6 +37,7 @@ const SearchField = (props) => {
         })
     }
 
+
     const getSuggestionValue = suggestion => {
         props.map.flyTo({
             center: suggestion.point,
@@ -59,7 +62,7 @@ const SearchField = (props) => {
     };
 
     const onChange = (event, { newValue }) => {
-        setSearchTerm(newValue);
+        setSearchTerm(newValue)
     };
 
     const inputProps = {
@@ -67,6 +70,15 @@ const SearchField = (props) => {
         value: searchTerm,
         onChange
     };
+
+    const renderSearchInput = (inputProps) => (
+        <DebounceInput
+            minLength={1}
+            debounceTimeout={800}
+            autoFocus
+            {...inputProps}
+        />
+    );
 
     return (
         <Autosuggest
@@ -77,6 +89,7 @@ const SearchField = (props) => {
             renderSuggestion={renderSuggestion}
             inputProps={inputProps}
             focusInputOnSuggestionClick={!isMobile}
+            renderInputComponent={renderSearchInput}
         />
     )
 }

@@ -1,7 +1,7 @@
 import Amplify from 'aws-amplify';
 import './App.css';
 import awsconfig from './aws-exports';
-import CoronaCentresMap from './components/CoronaCentresMap';
+import CoronaCentresMap from './components/CoronaMap/CoronaCentresMap';
 Amplify.configure(awsconfig);
 
 function App() {
